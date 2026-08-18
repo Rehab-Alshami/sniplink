@@ -174,12 +174,12 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                       }
                     />
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => copy(link.shortCode)}>
+                      <DropdownMenuItem onClick={() => copy(link.shortCode)}>
                         <Copy className="size-4" />
                         Copy link
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        onSelect={() => {
+                        onClick={() => {
                           setQrDataUrl(null)
                           setQrLink(link)
                         }}
@@ -189,7 +189,7 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         variant="destructive"
-                        onSelect={() => setDeleteTarget(link)}
+                        onClick={() => setDeleteTarget(link)}
                       >
                         <Trash2 className="size-4" />
                         Delete

@@ -50,6 +50,8 @@ Google is the only auth provider configured (`auth.ts`).
 
 **Ownership checks happen in the action, not middleware.** `deleteLink` scopes its `deleteMany` `where` clause to `{ id, userId: session.user.id }` so cross-user deletes silently affect 0 rows. Follow the same scoping approach for future per-user mutations rather than checking ownership before calling Prisma.
 
+**No `middleware.ts` — auth gating is per-page.** `app/dashboard/page.tsx` calls `auth()` itself and `redirect("/login?callbackUrl=/dashboard")` when there's no session; `app/login/page.tsx` reads `callbackUrl` from search params and passes it to the client-side `signIn("google", { callbackUrl })`. A new protected route needs the same manual check, not a matcher added to a middleware file.
+
 **UI kit is `@base-ui/react`, not Radix**, despite the shadcn tooling (`components.json`, `shadcn` style `base-nova`). Components like `Button` and `DropdownMenuTrigger` take a `render={<element/>}` prop for polymorphism instead of Radix's `asChild` — see `components/ui/button.tsx` and its use in `components/dashboard/links-table.tsx`. Don't reach for `asChild`.
 
 **Validation source of truth is `lib/validations.ts`** (`shortenSchema`, Zod v4) — used both by `react-hook-form`'s `zodResolver` on the client and by `shortenUrl` on the server via `safeParse`. Extend this schema rather than duplicating validation logic.

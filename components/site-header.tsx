@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -47,11 +48,13 @@ export function SiteHeader() {
                     "U"}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="truncate">
-                    {session.user.email ?? session.user.name}
-                  </DropdownMenuLabel>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="truncate">
+                      {session.user.email ?? session.user.name}
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => signOut({ callbackUrl: "/" })}>
+                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
                     <LogOut className="size-4" />
                     Sign out
                   </DropdownMenuItem>
