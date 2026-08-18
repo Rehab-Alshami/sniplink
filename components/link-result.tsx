@@ -5,6 +5,7 @@ import { Check, Copy, Download, ExternalLink } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { QrCode } from "@/components/qr-code"
+import { useLocale } from "@/components/providers/locale-provider"
 
 interface LinkResultProps {
   shortCode: string
@@ -13,6 +14,7 @@ interface LinkResultProps {
 }
 
 export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProps) {
+  const { t } = useLocale()
   const [origin, setOrigin] = useState("")
   const [copied, setCopied] = useState(false)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
@@ -27,10 +29,10 @@ export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProp
     try {
       await navigator.clipboard.writeText(shortUrl)
       setCopied(true)
-      toast.success("Short link copied to clipboard")
+      toast.success(t("linkResult.copySuccess"))
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      toast.error("Couldn't copy — copy it manually")
+      toast.error(t("linkResult.copyError"))
     }
   }
 
@@ -40,7 +42,7 @@ export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProp
     a.href = qrDataUrl
     a.download = `qr-${shortCode}.png`
     a.click()
-    toast.success("QR code downloaded")
+    toast.success(t("linkResult.downloadSuccess"))
   }
 
   return (
@@ -52,7 +54,7 @@ export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProp
 
         <div className="min-w-0 flex-1">
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Your short link
+            {t("linkResult.label")}
           </p>
           <a
             href={shortUrl}
@@ -72,11 +74,11 @@ export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProp
           <div className="mt-4 flex flex-wrap gap-2">
             <Button onClick={copy} size="sm">
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-              {copied ? "Copied" : "Copy link"}
+              {copied ? t("linkResult.copied") : t("linkResult.copy")}
             </Button>
             <Button onClick={download} size="sm" variant="outline" disabled={!qrDataUrl}>
               <Download className="size-4" />
-              Download QR
+              {t("linkResult.downloadQr")}
             </Button>
           </div>
         </div>
@@ -84,8 +86,7 @@ export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProp
 
       {!persisted && (
         <p className="mt-4 rounded-lg bg-accent/60 px-3 py-2 text-xs text-accent-foreground">
-          Preview mode: this link was generated but not saved yet. Connect your local
-          PostgreSQL database via Prisma to persist links and enable redirects.
+          {t("linkResult.previewNotice")}
         </p>
       )}
     </div>
