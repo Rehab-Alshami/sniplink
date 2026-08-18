@@ -6,6 +6,11 @@ import { prisma } from "@/lib/prisma"
 import { shortenSchema } from "@/lib/validations"
 import { generateShortCode, RESERVED_CODES } from "@/lib/short-code"
 
+// Server Actions run without a client locale, so errors are returned as
+// codes (not messages) — callers translate them via useLocale()'s
+// `errors.*` dictionary keys instead of hardcoding English here.
+export type ShortenErrorCode = "invalid_input" | "reserved_alias" | "alias_taken"
+
 export type ShortenResult =
   | {
       ok: true
@@ -15,7 +20,7 @@ export type ShortenResult =
       // Postgres). The link is generated but not persisted yet.
       persisted: boolean
     }
-  | { ok: false; error: string }
+  | { ok: false; error: ShortenErrorCode }
 
 export async function shortenUrl(formData: {
   url: string
@@ -23,7 +28,7 @@ export async function shortenUrl(formData: {
 }): Promise<ShortenResult> {
   const parsed = shortenSchema.safeParse(formData)
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" }
+    return { ok: false, error: "invalid_input" }
   }
 
   const { url, customAlias } = parsed.data
@@ -34,14 +39,14 @@ export async function shortenUrl(formData: {
   let shortCode = customAlias?.trim() || generateShortCode()
 
   if (customAlias && RESERVED_CODES.has(customAlias.toLowerCase())) {
-    return { ok: false, error: "That alias is reserved. Try another one." }
+    return { ok: false, error: "reserved_alias" }
   }
 
   try {
     if (customAlias) {
       const existing = await prisma.link.findUnique({ where: { shortCode } })
       if (existing) {
-        return { ok: false, error: "That custom alias is already taken." }
+        return { ok: false, error: "alias_taken" }
       }
     } else {
       // Retry a few times in the unlikely event of a random collision.
@@ -67,10 +72,14 @@ export async function shortenUrl(formData: {
   }
 }
 
-export async function deleteLink(id: string): Promise<{ ok: boolean; error?: string }> {
+export type DeleteErrorCode = "unauthenticated" | "not_found" | "failed"
+
+export async function deleteLink(
+  id: string,
+): Promise<{ ok: boolean; error?: DeleteErrorCode }> {
   const session = await auth().catch(() => null)
   if (!session?.user?.id) {
-    return { ok: false, error: "You must be signed in." }
+    return { ok: false, error: "unauthenticated" }
   }
 
   try {
@@ -79,12 +88,12 @@ export async function deleteLink(id: string): Promise<{ ok: boolean; error?: str
       where: { id, userId: session.user.id },
     })
     if (result.count === 0) {
-      return { ok: false, error: "Link not found." }
+      return { ok: false, error: "not_found" }
     }
     revalidatePath("/dashboard")
     return { ok: true }
   } catch (error) {
     console.log("[v0] deleteLink failed:", (error as Error).message)
-    return { ok: false, error: "Could not delete the link." }
+    return { ok: false, error: "failed" }
   }
 }

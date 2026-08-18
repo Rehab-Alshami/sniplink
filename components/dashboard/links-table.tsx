@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog"
 import { QrCode } from "@/components/qr-code"
 import { deleteLink } from "@/lib/actions"
+import { useLocale } from "@/components/providers/locale-provider"
 
 export interface DashboardLink {
   id: string
@@ -50,17 +51,18 @@ export interface DashboardLink {
   lastVisit: string | null
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
-}
-
 export function LinksTable({ links }: { links: DashboardLink[] }) {
+  const { t, locale } = useLocale()
   const router = useRouter()
   const [origin, setOrigin] = useState("")
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString(locale === "ar" ? "ar" : undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
   const [qrLink, setQrLink] = useState<DashboardLink | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DashboardLink | null>(null)
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
@@ -74,9 +76,9 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
   async function copy(code: string) {
     try {
       await navigator.clipboard.writeText(shortUrlFor(code))
-      toast.success("Short link copied")
+      toast.success(t("dashboard.toastCopySuccess"))
     } catch {
-      toast.error("Couldn't copy link")
+      toast.error(t("dashboard.toastCopyError"))
     }
   }
 
@@ -92,14 +94,14 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
     mutationFn: (id: string) => deleteLink(id),
     onSuccess: (res) => {
       if (res.ok) {
-        toast.success("Link deleted")
+        toast.success(t("dashboard.toastDeleted"))
         setDeleteTarget(null)
         router.refresh()
       } else {
-        toast.error(res.error ?? "Could not delete link")
+        toast.error(t(`errors.${res.error ?? "failed"}`))
       }
     },
-    onError: () => toast.error("Could not delete link"),
+    onError: () => toast.error(t("errors.failed")),
   })
 
   if (links.length === 0) {
@@ -108,11 +110,11 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
         <span className="flex size-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
           <Link2 className="size-6" />
         </span>
-        <h3 className="mt-4 font-semibold">No links yet</h3>
+        <h3 className="mt-4 font-semibold">{t("dashboard.emptyTitle")}</h3>
         <p className="mt-1 max-w-xs text-pretty text-sm text-muted-foreground">
-          Shorten your first URL from the homepage and it will show up here.
+          {t("dashboard.emptyDescription")}
         </p>
-        <Button className="mt-5" render={<a href="/">Create a short link</a>} />
+        <Button className="mt-5" render={<a href="/">{t("dashboard.createLink")}</a>} />
       </div>
     )
   }
@@ -123,10 +125,14 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead>Short link</TableHead>
-              <TableHead className="hidden md:table-cell">Destination</TableHead>
-              <TableHead className="hidden sm:table-cell">Created</TableHead>
-              <TableHead className="text-right">Clicks</TableHead>
+              <TableHead>{t("dashboard.tableShortLink")}</TableHead>
+              <TableHead className="hidden md:table-cell">
+                {t("dashboard.tableDestination")}
+              </TableHead>
+              <TableHead className="hidden sm:table-cell">
+                {t("dashboard.tableCreated")}
+              </TableHead>
+              <TableHead className="text-end">{t("dashboard.tableClicks")}</TableHead>
               <TableHead className="w-12" />
             </TableRow>
           </TableHeader>
@@ -143,7 +149,10 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                     /{link.shortCode}
                     <ExternalLink className="size-3.5" />
                   </a>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground md:hidden">
+                  {/* Table auto-layout doesn't shrink nowrap content the way
+                      flexbox does — without an explicit max-width this would
+                      force the whole table wider instead of truncating. */}
+                  <p className="mt-0.5 max-w-[60vw] truncate text-xs text-muted-foreground sm:max-w-[40vw] md:hidden">
                     {link.originalUrl}
                   </p>
                 </TableCell>
@@ -158,7 +167,7 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                 <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
                   {formatDate(link.createdAt)}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   <Badge variant="secondary" className="tabular-nums">
                     {link.clickCount}
                   </Badge>
@@ -169,14 +178,14 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                       render={
                         <Button variant="ghost" size="icon" className="size-8">
                           <MoreHorizontal className="size-4" />
-                          <span className="sr-only">Link actions</span>
+                          <span className="sr-only">{t("dashboard.linkActions")}</span>
                         </Button>
                       }
                     />
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => copy(link.shortCode)}>
                         <Copy className="size-4" />
-                        Copy link
+                        {t("dashboard.copyLink")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
@@ -185,14 +194,14 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                         }}
                       >
                         <QrIcon className="size-4" />
-                        Show QR code
+                        {t("dashboard.showQr")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         variant="destructive"
                         onClick={() => setDeleteTarget(link)}
                       >
                         <Trash2 className="size-4" />
-                        Delete
+                        {t("dashboard.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -207,7 +216,7 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
       <Dialog open={!!qrLink} onOpenChange={(open) => !open && setQrLink(null)}>
         <DialogContent className="sm:max-w-xs">
           <DialogHeader>
-            <DialogTitle>QR code</DialogTitle>
+            <DialogTitle>{t("dashboard.qrDialogTitle")}</DialogTitle>
             <DialogDescription className="font-mono text-xs">
               /{qrLink?.shortCode}
             </DialogDescription>
@@ -227,7 +236,7 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
                 onClick={() => downloadQr(qrLink.shortCode)}
               >
                 <Download className="size-4" />
-                Download PNG
+                {t("dashboard.downloadPng")}
               </Button>
             </div>
           )}
@@ -241,16 +250,16 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete this link?</DialogTitle>
+            <DialogTitle>{t("dashboard.deleteDialogTitle")}</DialogTitle>
             <DialogDescription>
-              <span className="font-mono">/{deleteTarget?.shortCode}</span> will stop
-              working immediately and its click history will be removed. This can&apos;t
-              be undone.
+              {t("dashboard.deleteDialogDescription", {
+                code: `/${deleteTarget?.shortCode ?? ""}`,
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Cancel
+              {t("dashboard.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -260,7 +269,7 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
               {removeMutation.isPending && (
                 <Loader2 className="size-4 animate-spin" />
               )}
-              Delete link
+              {t("dashboard.deleteLink")}
             </Button>
           </DialogFooter>
         </DialogContent>

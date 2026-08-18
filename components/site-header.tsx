@@ -13,21 +13,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageToggle } from "@/components/language-toggle"
+import { useLocale } from "@/components/providers/locale-provider"
 
 export function SiteHeader() {
   const { data: session, status } = useSession()
+  const { t } = useLocale()
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Link2 className="size-4" />
           </span>
-          <span className="text-lg font-semibold tracking-tight">Sniplink</span>
+          <span className="text-lg font-semibold tracking-tight">
+            {t("common.appName")}
+          </span>
         </Link>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
+          <LanguageToggle />
+          <ThemeToggle />
+
           {status === "authenticated" && session?.user ? (
             <>
               <Button
@@ -37,7 +46,7 @@ export function SiteHeader() {
                 render={
                   <Link href="/dashboard">
                     <LayoutDashboard className="size-4" />
-                    Dashboard
+                    <span className="hidden sm:inline">{t("header.dashboard")}</span>
                   </Link>
                 }
               />
@@ -56,13 +65,13 @@ export function SiteHeader() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
                     <LogOut className="size-4" />
-                    Sign out
+                    {t("header.signOut")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
-            <Button size="sm" render={<Link href="/login">Sign in</Link>} />
+            <Button size="sm" render={<Link href="/login">{t("header.signIn")}</Link>} />
           )}
         </nav>
       </div>

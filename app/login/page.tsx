@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { ArrowLeft, Link2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useLocale } from "@/components/providers/locale-provider"
 
 function GoogleMark() {
   return (
@@ -31,22 +32,23 @@ function GoogleMark() {
 }
 
 function LoginCard() {
+  const { t } = useLocale()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard"
   const [loading, setLoading] = useState(false)
 
   return (
     <div className="w-full max-w-sm">
-      <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
         <div className="flex flex-col items-center text-center">
           <span className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Link2 className="size-5" />
           </span>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight">
-            Sign in to Sniplink
+            {t("login.heading")}
           </h1>
           <p className="mt-2 text-pretty text-sm leading-relaxed text-muted-foreground">
-            Save your links and track clicks from a personal dashboard.
+            {t("login.subtitle")}
           </p>
         </div>
 
@@ -61,11 +63,11 @@ function LoginCard() {
           }}
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <GoogleMark />}
-          Continue with Google
+          {t("login.continueWithGoogle")}
         </Button>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
-          By continuing you agree to our Terms of Service and Privacy Policy.
+          {t("login.terms")}
         </p>
       </div>
 
@@ -73,8 +75,8 @@ function LoginCard() {
         href="/"
         className="mx-auto mt-6 flex w-fit items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft className="size-4" />
-        Back to home
+        <ArrowLeft className="size-4 rtl:rotate-180" />
+        {t("login.backToHome")}
       </Link>
     </div>
   )

@@ -46,6 +46,13 @@ export const viewport: Viewport = {
   ],
 }
 
+// Runs synchronously while the browser parses <head>, before first paint, so
+// a returning visitor's saved theme/language apply with no flash. See Next's
+// "preventing flash before hydration" guide — this mirrors its cookie/
+// localStorage theme example, extended to also set lang/dir for RTL.
+// Keep in sync with the storage keys used in ThemeProvider/LocaleProvider.
+const THEME_LOCALE_INIT_SCRIPT = `(function(){try{var r=document.documentElement;var t=localStorage.getItem("sniplink-theme");if(t==="dark")r.classList.add("dark");else if(t==="light")r.classList.add("light");var l=localStorage.getItem("sniplink-locale");if(l==="ar"){r.lang="ar";r.dir="rtl"}}catch(e){}})()`
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -54,8 +61,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      dir="ltr"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} bg-background`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_LOCALE_INIT_SCRIPT }} />
+      </head>
       <body className="font-sans antialiased">
         <Providers>{children}</Providers>
         <Toaster richColors position="top-center" />

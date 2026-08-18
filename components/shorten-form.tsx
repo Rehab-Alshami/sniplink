@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation } from "@tanstack/react-query"
@@ -9,15 +9,28 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { shortenSchema, type ShortenInput } from "@/lib/validations"
+import { createShortenSchema, type ShortenInput } from "@/lib/validations"
 import { shortenUrl, type ShortenResult } from "@/lib/actions"
 import { LinkResult } from "@/components/link-result"
+import { useLocale } from "@/components/providers/locale-provider"
 
 export function ShortenForm() {
+  const { t } = useLocale()
   const [showAlias, setShowAlias] = useState(false)
   const [result, setResult] = useState<
     Extract<ShortenResult, { ok: true }> | null
   >(null)
+
+  const schema = useMemo(
+    () =>
+      createShortenSchema({
+        urlRequired: t("validation.urlRequired"),
+        urlInvalid: t("validation.urlInvalid"),
+        urlProtocol: t("validation.urlProtocol"),
+        aliasInvalid: t("validation.aliasInvalid"),
+      }),
+    [t],
+  )
 
   const {
     register,
@@ -25,7 +38,7 @@ export function ShortenForm() {
     reset,
     formState: { errors },
   } = useForm<ShortenInput>({
-    resolver: zodResolver(shortenSchema),
+    resolver: zodResolver(schema),
     defaultValues: { url: "", customAlias: "" },
   })
 
@@ -34,12 +47,12 @@ export function ShortenForm() {
     onSuccess: (data) => {
       if (data.ok) {
         setResult(data)
-        toast.success("Short link ready")
+        toast.success(t("shortenForm.toastSuccess"))
       } else {
-        toast.error(data.error)
+        toast.error(t(`errors.${data.error}`))
       }
     },
-    onError: () => toast.error("Something went wrong. Please try again."),
+    onError: () => toast.error(t("shortenForm.toastError")),
   })
 
   function onSubmit(values: ShortenInput) {
@@ -55,14 +68,14 @@ export function ShortenForm() {
       >
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <Link2 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Link2 className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               {...register("url")}
               type="url"
               inputMode="url"
               autoComplete="off"
-              placeholder="Paste a long URL, e.g. https://example.com/very/long/path"
-              className="h-12 pl-9 text-base"
+              placeholder={t("shortenForm.urlPlaceholder")}
+              className="h-12 ps-9 text-base"
               aria-invalid={!!errors.url}
             />
           </div>
@@ -77,7 +90,7 @@ export function ShortenForm() {
             ) : (
               <Sparkles className="size-4" />
             )}
-            Shorten
+            {t("shortenForm.shortenButton")}
           </Button>
         </div>
 
@@ -94,13 +107,13 @@ export function ShortenForm() {
             <ChevronDown
               className={`size-4 transition-transform ${showAlias ? "rotate-180" : ""}`}
             />
-            Custom alias (optional)
+            {t("shortenForm.customAliasToggle")}
           </button>
 
           {showAlias && (
             <div className="mt-2">
               <Label htmlFor="customAlias" className="sr-only">
-                Custom alias
+                {t("shortenForm.customAliasToggle")}
               </Label>
               <div className="flex items-center gap-1 rounded-md border border-input bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
                 <span className="shrink-0 font-mono text-sm text-muted-foreground">
@@ -109,7 +122,7 @@ export function ShortenForm() {
                 <Input
                   id="customAlias"
                   {...register("customAlias")}
-                  placeholder="my-custom-link"
+                  placeholder={t("shortenForm.aliasPlaceholder")}
                   className="border-0 px-1 font-mono shadow-none focus-visible:ring-0"
                   aria-invalid={!!errors.customAlias}
                 />
@@ -139,7 +152,7 @@ export function ShortenForm() {
             }}
             className="mx-auto mt-4 block text-sm text-muted-foreground hover:text-foreground"
           >
-            Shorten another link
+            {t("shortenForm.shortenAnother")}
           </button>
         </div>
       )}
