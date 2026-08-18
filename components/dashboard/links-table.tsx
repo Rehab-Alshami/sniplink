@@ -41,6 +41,7 @@ import {
 import { QrCode } from "@/components/qr-code"
 import { deleteLink } from "@/lib/actions"
 import { useLocale } from "@/components/providers/locale-provider"
+import { copyText } from "@/lib/clipboard"
 
 export interface DashboardLink {
   id: string
@@ -74,10 +75,10 @@ export function LinksTable({ links }: { links: DashboardLink[] }) {
   const shortUrlFor = (code: string) => `${origin || ""}/${code}`
 
   async function copy(code: string) {
-    try {
-      await navigator.clipboard.writeText(shortUrlFor(code))
+    const ok = await copyText(shortUrlFor(code))
+    if (ok) {
       toast.success(t("dashboard.toastCopySuccess"))
-    } catch {
+    } else {
       toast.error(t("dashboard.toastCopyError"))
     }
   }

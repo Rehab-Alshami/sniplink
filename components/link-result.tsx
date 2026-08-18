@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { QrCode } from "@/components/qr-code"
 import { useLocale } from "@/components/providers/locale-provider"
+import { copyText } from "@/lib/clipboard"
 
 interface LinkResultProps {
   shortCode: string
@@ -26,12 +27,12 @@ export function LinkResult({ shortCode, originalUrl, persisted }: LinkResultProp
   const shortUrl = origin ? `${origin}/${shortCode}` : `/${shortCode}`
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(shortUrl)
+    const ok = await copyText(shortUrl)
+    if (ok) {
       setCopied(true)
       toast.success(t("linkResult.copySuccess"))
       setTimeout(() => setCopied(false), 2000)
-    } catch {
+    } else {
       toast.error(t("linkResult.copyError"))
     }
   }
